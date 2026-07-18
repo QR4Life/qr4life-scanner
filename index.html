@@ -1,6 +1,13 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>QR4Life Inventory</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.3/JsBarcode.all.min.js"></script>
 <style>
+  html, body { margin: 0; padding: 0; height: 100%; }
   :root {
     --bg: #F3F1E9;
     --panel: #FFFFFF;
@@ -20,7 +27,7 @@
   }
   * { box-sizing: border-box; }
   body, .qr4-root { font-family: var(--sans); color: var(--ink); background: var(--bg); }
-  .qr4-root { max-width: 480px; margin: 0 auto; padding: 16px 16px 90px; min-height: 100%; position: relative; }
+  .qr4-root { max-width: 480px; margin: 0 auto; padding: 16px 16px calc(100px + env(safe-area-inset-bottom)); min-height: 100vh; min-height: 100dvh; position: relative; background: var(--bg); }
 
   .qr4-header {
     display: flex; align-items: center; justify-content: space-between;
@@ -98,6 +105,7 @@
     position: fixed; bottom: 0; left: 0; right: 0; background: var(--panel);
     border-top: 1px solid var(--line); display: flex; max-width: 480px; margin: 0 auto;
     box-shadow: 0 -2px 12px rgba(0,0,0,0.05); z-index: 30;
+    padding-bottom: env(safe-area-inset-bottom);
   }
   .tab-item { flex: 1; text-align: center; padding: 12px 0 10px; cursor: pointer; color: var(--ink-soft); }
   .tab-item.active { color: var(--forest); }
@@ -115,6 +123,8 @@
   .bar-fill { height: 100%; background: linear-gradient(90deg, var(--forest), var(--gold)); border-radius: 6px; }
 </style>
 
+</head>
+<body>
 <div class="qr4-root">
   <div class="qr4-header">
     <div>
@@ -377,9 +387,17 @@
         method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ action: 'identify', code })
       });
-      const data = await res.json();
+      const rawText = await res.text();
+      let data;
+      try { data = JSON.parse(rawText); }
+      catch (parseErr) {
+        showToast('Script did not return JSON - check Script URL / deployment access is set to Anyone');
+        console.error('Raw response:', rawText);
+        resumeScanner();
+        return;
+      }
       if (data.exists) { showConfirmCard(data); } else { openNewProductForm(code); }
-    } catch (e) { showToast('Network error'); resumeScanner(); }
+    } catch (e) { showToast('Network error: ' + e.message); resumeScanner(); }
   }
 
   function showConfirmCard(product) {
@@ -470,7 +488,15 @@
         method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ action: 'createProduct', code: prefillCode || '', brand, productCode, name, price, isDisplay, location: fullLocation() || '' })
       });
-      const data = await res.json();
+      const rawText = await res.text();
+      let data;
+      try { data = JSON.parse(rawText); }
+      catch (parseErr) {
+        showToast('Script did not return JSON - check deployment access is set to Anyone');
+        console.error('Raw response:', rawText);
+        resumeScanner();
+        return;
+      }
       if (data.success) {
         showToast('Saved: ' + data.name + ' (' + data.code + ')');
         if (data.qtyAtLocation) addFeedItem(data.code, fullLocation(), 'IN', data.qtyAtLocation, data.name, data.price);
@@ -609,3 +635,6 @@
 
   loadConfig();
 </script>
+
+</body>
+</html>
