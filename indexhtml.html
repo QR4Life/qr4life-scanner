@@ -1,0 +1,495 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.3/JsBarcode.all.min.js"></script>
+<style>
+  :root {
+    --bg: #F6F3EC;
+    --panel: #FFFFFF;
+    --ink: #1B1F1C;
+    --ink-soft: #5B6459;
+    --forest: #1F4B38;
+    --forest-deep: #163A2B;
+    --in-color: #2F7A54;
+    --out-color: #B8562E;
+    --check-color: #3D5A73;
+    --line: #E3DECF;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body, .qr4-root { font-family: var(--sans); color: var(--ink); background: var(--bg); }
+  .qr4-root { max-width: 480px; margin: 0 auto; padding: 16px; min-height: 100%; }
+
+  .qr4-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .qr4-header h1 { font-size: 16px; font-weight: 700; letter-spacing: 0.02em; color: var(--forest-deep); margin: 0; }
+  .qr4-header .sub { font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
+  .gear-btn { background: none; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font-size: 16px; cursor: pointer; }
+
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px; margin-bottom: 14px; }
+  .field-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); margin-bottom: 6px; display: block; }
+  input[type="text"], input[type="number"] {
+    width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line);
+    font-family: var(--mono); font-size: 14px; background: #FCFBF7; margin-bottom: 10px;
+  }
+  label.checkline { display:flex; align-items:center; gap:8px; font-size: 13px; margin-bottom: 10px; }
+
+  .row { display: flex; gap: 8px; }
+  .btn { border: none; border-radius: 10px; padding: 10px 14px; font-size: 13px; font-weight: 600; cursor: pointer; flex:1; }
+  .btn-primary { background: var(--forest); color: white; }
+  .btn-ghost { background: #EFEBDF; color: var(--forest-deep); }
+  .btn-out { background: var(--out-color); color: white; }
+
+  .location-bar { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 14px; background: var(--forest-deep); color: white; margin-bottom: 14px; }
+  .location-bar .code { font-family: var(--mono); font-size: 17px; font-weight: 700; letter-spacing: 0.03em; }
+  .location-bar .label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.7; margin-bottom: 2px; }
+
+  .mode-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .mode-btn { border: 2px solid var(--line); background: var(--panel); border-radius: 14px; padding: 14px 6px; text-align: center; cursor: pointer; }
+  .mode-btn .big { font-size: 20px; font-weight: 800; }
+  .mode-btn .small { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+  .mode-btn.active-in { border-color: var(--in-color); background: #EAF4EC; }
+  .mode-btn.active-in .big { color: var(--in-color); }
+  .mode-btn.active-out { border-color: var(--out-color); background: #FBEEE6; }
+  .mode-btn.active-out .big { color: var(--out-color); }
+  .mode-btn.active-check { border-color: var(--check-color); background: #E9EEF2; }
+  .mode-btn.active-check .big { color: var(--check-color); }
+
+  .scan-btn { width: 100%; padding: 18px; border-radius: 16px; border: none; color: white; font-size: 16px; font-weight: 700; letter-spacing: 0.02em; cursor: pointer; margin-bottom: 14px; }
+  .newprod-btn { width:100%; padding: 12px; border-radius: 12px; border: 1px dashed var(--forest); background: transparent; color: var(--forest-deep); font-size:13px; font-weight:600; margin-bottom:14px; cursor:pointer; }
+
+  #reader { width: 100%; border-radius: 14px; overflow: hidden; margin-bottom: 14px; }
+
+  .card-title { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+  .card-sub { font-size: 12px; color: var(--ink-soft); margin-bottom: 12px; }
+  .price-line { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+  .price-line span.currency { font-family: var(--mono); font-weight:700; }
+
+  .feed-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .feed-item:last-child { border-bottom: none; }
+  .feed-item .fi-code { font-family: var(--mono); font-weight: 600; }
+  .feed-item .fi-loc { color: var(--ink-soft); font-size: 11px; }
+  .feed-tag { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 20px; color: white; }
+
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--forest-deep); color: white; padding: 10px 18px; border-radius: 20px; font-size: 13px; font-weight: 600; box-shadow: 0 4px 16px rgba(0,0,0,0.2); z-index: 50; max-width: 90%; text-align: center; }
+  .empty-note { font-size: 12px; color: var(--ink-soft); text-align: center; padding: 10px 0; }
+  .lookup-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .lookup-row .qty { font-weight: 700; color: var(--check-color); }
+
+  #barcodePreview { text-align:center; background:white; border-radius: 10px; padding: 10px; margin-bottom: 12px; }
+  .overlay-backdrop { position: fixed; inset:0; background: rgba(20,20,15,0.45); z-index: 40; display:flex; align-items:flex-end; }
+  .overlay-card { background: var(--panel); width:100%; border-radius: 20px 20px 0 0; padding: 20px 16px 24px; max-height: 85vh; overflow-y:auto; }
+</style>
+
+<div class="qr4-root">
+  <div class="qr4-header">
+    <div>
+      <h1>QR4LIFE INVENTORY</h1>
+      <div class="sub" id="statusLine">Not connected</div>
+    </div>
+    <button class="gear-btn" onclick="toggleSettings()">⚙</button>
+  </div>
+
+  <div class="panel" id="settingsPanel" style="display:none;">
+    <span class="field-label">Google Apps Script Web App URL</span>
+    <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/.../exec" />
+    <div class="row">
+      <button class="btn btn-primary" onclick="saveConfig()">Save</button>
+      <button class="btn btn-ghost" onclick="toggleSettings()">Close</button>
+    </div>
+  </div>
+
+  <div class="location-bar">
+    <div>
+      <div class="label">Current Rack Location</div>
+      <div class="code" id="currentLocation">Not set</div>
+    </div>
+    <button class="btn btn-ghost" onclick="startLocationScan()">Set / Change</button>
+  </div>
+
+  <div class="mode-grid">
+    <div class="mode-btn" id="modeInBtn" onclick="setMode('IN')">
+      <div class="big">IN</div><div class="small">Receiving</div>
+    </div>
+    <div class="mode-btn" id="modeOutBtn" onclick="setMode('OUT')">
+      <div class="big">OUT</div><div class="small">Sale / Move</div>
+    </div>
+    <div class="mode-btn" id="modeCheckBtn" onclick="setMode('CHECK')">
+      <div class="big">CHK</div><div class="small">Look up rack</div>
+    </div>
+  </div>
+
+  <button class="scan-btn" id="scanBtn" onclick="startProductScan()">📷 SCAN PRODUCT BARCODE</button>
+  <button class="newprod-btn" onclick="openNewProductForm(null)">+ New Product (generate barcode, no scan)</button>
+
+  <div id="reader" style="display:none;"></div>
+
+  <div class="panel" id="lookupPanel" style="display:none;">
+    <span class="field-label">Items at this location</span>
+    <div id="lookupResults"></div>
+  </div>
+
+  <div class="panel">
+    <span class="field-label">Recent Activity</span>
+    <div id="feed"><div class="empty-note">No scans yet</div></div>
+  </div>
+</div>
+
+<div id="overlayRoot"></div>
+
+<script>
+  let scriptUrl = '';
+  let currentLocation = '';
+  let currentMode = 'IN';
+  let html5Qrcode = null;
+  let scanningFor = null;
+  let lastScan = { code: '', time: 0 };
+  const feedData = [];
+
+  async function loadConfig() {
+    try {
+      const result = await window.storage.get('qr4life-config', false);
+      if (result && result.value) {
+        const cfg = JSON.parse(result.value);
+        scriptUrl = cfg.scriptUrl || '';
+        currentLocation = cfg.lastLocation || '';
+      }
+    } catch (e) {}
+    document.getElementById('scriptUrlInput').value = scriptUrl;
+    updateStatusLine();
+    updateLocationDisplay();
+    setMode('IN');
+  }
+
+  async function saveConfig() {
+    scriptUrl = document.getElementById('scriptUrlInput').value.trim();
+    await persistConfig();
+    updateStatusLine();
+    toggleSettings();
+    showToast(scriptUrl ? 'Connected' : 'URL cleared');
+  }
+
+  async function persistConfig() {
+    try {
+      await window.storage.set('qr4life-config', JSON.stringify({ scriptUrl, lastLocation: currentLocation }), false);
+    } catch (e) { console.error('Storage error', e); }
+  }
+
+  function updateStatusLine() {
+    document.getElementById('statusLine').textContent = scriptUrl ? 'Connected to Sheet' : 'Not connected — tap ⚙ to add Script URL';
+  }
+  function updateLocationDisplay() {
+    document.getElementById('currentLocation').textContent = currentLocation || 'Not set';
+  }
+  function toggleSettings() {
+    const panel = document.getElementById('settingsPanel');
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  }
+
+  function setMode(mode) {
+    currentMode = mode;
+    document.getElementById('modeInBtn').className = 'mode-btn' + (mode === 'IN' ? ' active-in' : '');
+    document.getElementById('modeOutBtn').className = 'mode-btn' + (mode === 'OUT' ? ' active-out' : '');
+    document.getElementById('modeCheckBtn').className = 'mode-btn' + (mode === 'CHECK' ? ' active-check' : '');
+    const scanBtn = document.getElementById('scanBtn');
+    const lookupPanel = document.getElementById('lookupPanel');
+    if (mode === 'IN') {
+      scanBtn.style.background = 'var(--in-color)';
+      scanBtn.textContent = '📷 SCAN ITEM TO ADD STOCK';
+      lookupPanel.style.display = 'none';
+    } else if (mode === 'OUT') {
+      scanBtn.style.background = 'var(--out-color)';
+      scanBtn.textContent = '📷 SCAN ITEM TO REMOVE STOCK';
+      lookupPanel.style.display = 'none';
+    } else {
+      scanBtn.style.background = 'var(--check-color)';
+      scanBtn.textContent = '📷 SCAN RACK TO VIEW CONTENTS';
+      lookupPanel.style.display = 'block';
+      if (currentLocation) runLookup(currentLocation);
+    }
+  }
+
+  function startLocationScan() { scanningFor = 'location'; openScanner(); }
+  function startProductScan() {
+    if (!scriptUrl) { showToast('Add your Script URL first (tap ⚙)'); return; }
+    if (currentMode !== 'CHECK' && !currentLocation) { showToast('Set a rack location first'); return; }
+    scanningFor = currentMode === 'CHECK' ? 'location' : 'product';
+    openScanner();
+  }
+
+  function openScanner() {
+    const readerDiv = document.getElementById('reader');
+    readerDiv.style.display = 'block';
+    readerDiv.innerHTML = '';
+    if (html5Qrcode) { html5Qrcode.stop().catch(() => {}); }
+    html5Qrcode = new Html5Qrcode('reader', {
+      formatsToSupport: [
+        Html5QrcodeSupportedFormats.QR_CODE, Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8, Html5QrcodeSupportedFormats.UPC_A,
+        Html5QrcodeSupportedFormats.UPC_E, Html5QrcodeSupportedFormats.CODE_128,
+        Html5QrcodeSupportedFormats.CODE_39, Html5QrcodeSupportedFormats.ITF,
+        Html5QrcodeSupportedFormats.CODABAR
+      ], verbose: false
+    });
+    html5Qrcode.start(
+      { facingMode: 'environment' },
+      { fps: 10, qrbox: { width: 260, height: 160 } },
+      onScanSuccess, () => {}
+    ).catch(err => { showToast('Camera error: ' + err); readerDiv.style.display = 'none'; });
+  }
+
+  function pauseScanner() { if (html5Qrcode) { try { html5Qrcode.pause(true); } catch(e){} } }
+  function resumeScanner() { if (html5Qrcode) { try { html5Qrcode.resume(); } catch(e){} } }
+  function closeScanner() {
+    if (html5Qrcode) {
+      html5Qrcode.stop().then(() => { document.getElementById('reader').style.display = 'none'; }).catch(() => { document.getElementById('reader').style.display = 'none'; });
+    }
+  }
+
+  async function onScanSuccess(decodedText) {
+    const now = Date.now();
+    if (decodedText === lastScan.code && now - lastScan.time < 1800) return;
+    lastScan = { code: decodedText, time: now };
+
+    if (scanningFor === 'location' && currentMode !== 'CHECK') {
+      currentLocation = decodedText.toUpperCase();
+      updateLocationDisplay();
+      await persistConfig();
+      closeScanner();
+      showToast('Location set: ' + currentLocation);
+      return;
+    }
+    if (currentMode === 'CHECK') {
+      currentLocation = decodedText.toUpperCase();
+      updateLocationDisplay();
+      await persistConfig();
+      closeScanner();
+      runLookup(currentLocation);
+      return;
+    }
+
+    // Product scan: identify first, then show confirm card or new-product form
+    pauseScanner();
+    const code = decodedText;
+    try {
+      const res = await fetch(scriptUrl, {
+        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'identify', code })
+      });
+      const data = await res.json();
+      if (data.exists) {
+        showConfirmCard(data);
+      } else {
+        openNewProductForm(code);
+      }
+    } catch (e) { showToast('Network error'); resumeScanner(); }
+  }
+
+  // ---------- Confirm card (existing product) ----------
+  function showConfirmCard(product) {
+    const isIn = currentMode === 'IN';
+    const overlay = document.getElementById('overlayRoot');
+    overlay.innerHTML = `
+      <div class="overlay-backdrop">
+        <div class="overlay-card">
+          <div class="card-title">${escapeHtml(product.name)}</div>
+          <div class="card-sub">${escapeHtml(product.brand || '')} · Current stock: ${product.quantity} · At ${escapeHtml(currentLocation)}</div>
+          ${isIn ? `
+            <span class="field-label">Price per unit (edit if changed)</span>
+            <div class="price-line">
+              <span class="currency">₹</span>
+              <input type="number" id="confirmPrice" value="${product.price}" style="margin-bottom:0;" />
+            </div>
+          ` : ''}
+          <div class="row">
+            <button class="btn ${isIn ? 'btn-primary' : 'btn-out'}" onclick="commitScan('${product.code}')">
+              ${isIn ? 'Add 1 Unit' : 'Remove 1 Unit'}
+            </button>
+            <button class="btn btn-ghost" onclick="closeOverlay()">Cancel</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  async function commitScan(code) {
+    const isIn = currentMode === 'IN';
+    let price = null;
+    if (isIn) {
+      const priceEl = document.getElementById('confirmPrice');
+      price = priceEl ? priceEl.value : null;
+    }
+    closeOverlay();
+    showToast('Saving...');
+    try {
+      const res = await fetch(scriptUrl, {
+        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'scan', code, location: currentLocation, type: currentMode, price })
+      });
+      const data = await res.json();
+      if (data.success) {
+        addFeedItem(code, currentLocation, currentMode, data.qtyAtLocation, data.name, data.price);
+        showToast((isIn ? '+1 → ' : '-1 → ') + data.name + ' · Total qty: ' + data.totalQty + ' · ₹' + data.price);
+      } else {
+        showToast('Error: ' + (data.error || 'unknown'));
+      }
+    } catch (e) { showToast('Network error'); }
+    resumeScanner();
+  }
+
+  // ---------- New product form ----------
+  function openNewProductForm(prefillCode) {
+    pauseScanner();
+    const overlay = document.getElementById('overlayRoot');
+    const isFromScan = !!prefillCode;
+    overlay.innerHTML = `
+      <div class="overlay-backdrop">
+        <div class="overlay-card">
+          <div class="card-title">New Product</div>
+          <div class="card-sub">${isFromScan ? 'Barcode scanned: ' + escapeHtml(prefillCode) + ' — not in your catalog yet' : 'No barcode yet — one will be generated for you to print'}</div>
+          <span class="field-label">Brand</span>
+          <input type="text" id="npBrand" placeholder="e.g. KitchenAid" />
+          <span class="field-label">Product Code (vendor/model code, optional)</span>
+          <input type="text" id="npProductCode" placeholder="e.g. 5KSM175PSICA" />
+          <span class="field-label">Product Name</span>
+          <input type="text" id="npName" placeholder="e.g. Artisan Stand Mixer 4.8L Red" />
+          <span class="field-label">Price per Unit (₹)</span>
+          <input type="number" id="npPrice" placeholder="e.g. 42999" />
+          <label class="checkline"><input type="checkbox" id="npDisplay" /> This is a display item (skip rack map)</label>
+          <div class="row">
+            <button class="btn btn-primary" onclick="submitNewProduct('${isFromScan ? prefillCode : ''}')">Save Product</button>
+            <button class="btn btn-ghost" onclick="closeOverlay()">Cancel</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  async function submitNewProduct(prefillCode) {
+    const brand = document.getElementById('npBrand').value.trim();
+    const productCode = document.getElementById('npProductCode').value.trim();
+    const name = document.getElementById('npName').value.trim();
+    const price = document.getElementById('npPrice').value;
+    const isDisplay = document.getElementById('npDisplay').checked;
+    if (!name) { showToast('Product name is required'); return; }
+
+    closeOverlay();
+    showToast('Saving new product...');
+    try {
+      const res = await fetch(scriptUrl, {
+        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'createProduct', code: prefillCode || '', brand, productCode, name, price,
+          isDisplay, location: currentLocation || ''
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Saved: ' + data.name + ' (' + data.code + ')');
+        if (data.qtyAtLocation) addFeedItem(data.code, currentLocation, 'IN', data.qtyAtLocation, data.name, data.price);
+        showBarcodeResult(data.code, data.name, data.price);
+      } else {
+        showToast('Error: ' + data.error);
+      }
+    } catch (e) { showToast('Network error'); }
+    resumeScanner();
+  }
+
+  function showBarcodeResult(code, name, price) {
+    const overlay = document.getElementById('overlayRoot');
+    overlay.innerHTML = `
+      <div class="overlay-backdrop">
+        <div class="overlay-card">
+          <div class="card-title">Barcode Ready</div>
+          <div class="card-sub">${escapeHtml(name)} · ₹${price}</div>
+          <div id="barcodePreview"><svg id="genBarcodeSvg"></svg></div>
+          <div class="row">
+            <button class="btn btn-primary" onclick="printBarcode('${code}', '${escapeJs(name)}', '${price}')">Print Label</button>
+            <button class="btn btn-ghost" onclick="closeOverlay()">Done</button>
+          </div>
+        </div>
+      </div>`;
+    JsBarcode('#genBarcodeSvg', code, { format: 'CODE128', displayValue: true, fontSize: 14, width: 2, height: 60 });
+  }
+
+  function printBarcode(code, name, price) {
+    const w = window.open('', '_blank', 'width=420,height=320');
+    w.document.write(`<html><head><title>Label</title>
+      <style>
+        body { font-family: sans-serif; text-align:center; padding: 10px; }
+        .pname { font-size: 13px; font-weight:600; margin-top:6px; }
+        .pprice { font-size: 13px; margin-top:2px; }
+      </style>
+      </head><body>
+        <svg id="pbarcode"></svg>
+        <div class="pname">${escapeHtml(name)}</div>
+        <div class="pprice">Rs. ${escapeHtml(String(price))}</div>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.3/JsBarcode.all.min.js"><\/script>
+        <script>
+          JsBarcode("#pbarcode", "${code}", { format: "CODE128", displayValue: true, fontSize: 14, width: 2, height: 60 });
+          window.onload = function(){ setTimeout(function(){ window.print(); }, 300); };
+        <\/script>
+      </body></html>`);
+    w.document.close();
+  }
+
+  function closeOverlay() { document.getElementById('overlayRoot').innerHTML = ''; }
+
+  // ---------- Lookup (CHECK mode) ----------
+  async function runLookup(location) {
+    if (!scriptUrl) { showToast('Add your Script URL first'); return; }
+    const container = document.getElementById('lookupResults');
+    container.innerHTML = '<div class="empty-note">Loading...</div>';
+    try {
+      const res = await fetch(scriptUrl, {
+        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'lookup', location })
+      });
+      const data = await res.json();
+      if (data.success) {
+        container.innerHTML = data.items.length === 0
+          ? '<div class="empty-note">No stock recorded at this location</div>'
+          : data.items.map(it => `<div class="lookup-row"><span>${escapeHtml(it.name)}</span><span class="qty">${it.qty}</span></div>`).join('');
+      } else {
+        container.innerHTML = '<div class="empty-note">Error: ' + data.error + '</div>';
+      }
+    } catch (e) { container.innerHTML = '<div class="empty-note">Network error</div>'; }
+  }
+
+  // ---------- Feed ----------
+  function addFeedItem(code, location, type, qty, name, price) {
+    feedData.unshift({ code, location, type, qty, name, price });
+    if (feedData.length > 15) feedData.pop();
+    renderFeed();
+  }
+  function renderFeed() {
+    const feed = document.getElementById('feed');
+    if (feedData.length === 0) { feed.innerHTML = '<div class="empty-note">No scans yet</div>'; return; }
+    const tagColor = t => t === 'IN' ? 'var(--in-color)' : 'var(--out-color)';
+    feed.innerHTML = feedData.map(f => `
+      <div class="feed-item">
+        <div>
+          <div class="fi-code">${escapeHtml(f.name || f.code)}</div>
+          <div class="fi-loc">${escapeHtml(f.location)} · ₹${f.price}</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span>Qty ${f.qty}</span>
+          <span class="feed-tag" style="background:${tagColor(f.type)};">${f.type}</span>
+        </div>
+      </div>`).join('');
+  }
+
+  // ---------- Utilities ----------
+  function escapeHtml(str) {
+    return String(str || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+  function escapeJs(str) { return String(str || '').replace(/'/g, "\\'"); }
+
+  let toastTimer = null;
+  function showToast(msg) {
+    let toast = document.getElementById('qr4-toast');
+    if (!toast) { toast = document.createElement('div'); toast.id = 'qr4-toast'; toast.className = 'toast'; document.body.appendChild(toast); }
+    toast.textContent = msg;
+    toast.style.display = 'block';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { toast.style.display = 'none'; }, 2600);
+  }
+
+  loadConfig();
+</script>
