@@ -383,6 +383,7 @@
 
     pauseScanner();
     const code = decodedText;
+    showToast('Detected: ' + code);
     try {
       const res = await fetch(scriptUrl, {
         method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
