@@ -2,50 +2,65 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.3/JsBarcode.all.min.js"></script>
 <style>
   :root {
-    --bg: #F6F3EC;
+    --bg: #F3F1E9;
     --panel: #FFFFFF;
-    --ink: #1B1F1C;
-    --ink-soft: #5B6459;
+    --ink: #17201A;
+    --ink-soft: #6B7268;
     --forest: #1F4B38;
-    --forest-deep: #163A2B;
+    --forest-deep: #12332A;
+    --forest-light: #E7F0EA;
+    --gold: #C9A24B;
     --in-color: #2F7A54;
     --out-color: #B8562E;
     --check-color: #3D5A73;
-    --line: #E3DECF;
+    --line: #E5E0D2;
     --mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
     --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --shadow: 0 2px 10px rgba(23,32,26,0.06), 0 1px 2px rgba(23,32,26,0.04);
   }
   * { box-sizing: border-box; }
   body, .qr4-root { font-family: var(--sans); color: var(--ink); background: var(--bg); }
-  .qr4-root { max-width: 480px; margin: 0 auto; padding: 16px; min-height: 100%; }
+  .qr4-root { max-width: 480px; margin: 0 auto; padding: 16px 16px 90px; min-height: 100%; position: relative; }
 
-  .qr4-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-  .qr4-header h1 { font-size: 16px; font-weight: 700; letter-spacing: 0.02em; color: var(--forest-deep); margin: 0; }
-  .qr4-header .sub { font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
-  .gear-btn { background: none; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font-size: 16px; cursor: pointer; }
-
-  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px; margin-bottom: 14px; }
-  .field-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); margin-bottom: 6px; display: block; }
-  input[type="text"], input[type="number"] {
-    width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line);
-    font-family: var(--mono); font-size: 14px; background: #FCFBF7; margin-bottom: 10px;
+  .qr4-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px; background: linear-gradient(135deg, var(--forest-deep), var(--forest));
+    padding: 16px 18px; border-radius: 18px; color: white; box-shadow: var(--shadow);
   }
-  label.checkline { display:flex; align-items:center; gap:8px; font-size: 13px; margin-bottom: 10px; }
+  .qr4-header h1 { font-size: 15px; font-weight: 800; letter-spacing: 0.04em; margin: 0; }
+  .qr4-header .sub { font-size: 11px; opacity: 0.75; margin-top: 3px; }
+  .gear-btn { background: rgba(255,255,255,0.12); border: none; border-radius: 10px; padding: 8px 10px; font-size: 16px; cursor: pointer; color: white; }
+
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 16px; margin-bottom: 14px; box-shadow: var(--shadow); }
+  .field-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink-soft); margin-bottom: 6px; display: block; font-weight: 600; }
+  input[type="text"], input[type="number"], select {
+    width: 100%; padding: 11px 12px; border-radius: 12px; border: 1px solid var(--line);
+    font-family: var(--mono); font-size: 14px; background: #FBFAF5; margin-bottom: 10px;
+  }
+  label.checkline { display:flex; align-items:center; gap:8px; font-size: 13px; margin-bottom: 10px; color: var(--ink-soft); }
 
   .row { display: flex; gap: 8px; }
-  .btn { border: none; border-radius: 10px; padding: 10px 14px; font-size: 13px; font-weight: 600; cursor: pointer; flex:1; }
+  .btn { border: none; border-radius: 12px; padding: 11px 14px; font-size: 13px; font-weight: 700; cursor: pointer; flex:1; }
   .btn-primary { background: var(--forest); color: white; }
-  .btn-ghost { background: #EFEBDF; color: var(--forest-deep); }
+  .btn-ghost { background: var(--forest-light); color: var(--forest-deep); }
   .btn-out { background: var(--out-color); color: white; }
 
-  .location-bar { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 14px; background: var(--forest-deep); color: white; margin-bottom: 14px; }
-  .location-bar .code { font-family: var(--mono); font-size: 17px; font-weight: 700; letter-spacing: 0.03em; }
-  .location-bar .label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.7; margin-bottom: 2px; }
+  .store-tabs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .store-tab {
+    text-align: center; padding: 10px 4px; border-radius: 12px; border: 2px solid var(--line);
+    background: var(--panel); font-size: 12px; font-weight: 700; color: var(--ink-soft); cursor: pointer;
+  }
+  .store-tab.active { border-color: var(--gold); background: #FBF4E2; color: var(--forest-deep); }
+
+  .location-bar { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-radius: 16px; background: var(--forest-deep); color: white; margin-bottom: 14px; box-shadow: var(--shadow); }
+  .location-bar .code { font-family: var(--mono); font-size: 16px; font-weight: 700; letter-spacing: 0.02em; }
+  .location-bar .label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.65; margin-bottom: 2px; }
 
   .mode-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
-  .mode-btn { border: 2px solid var(--line); background: var(--panel); border-radius: 14px; padding: 14px 6px; text-align: center; cursor: pointer; }
-  .mode-btn .big { font-size: 20px; font-weight: 800; }
-  .mode-btn .small { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+  .mode-btn { border: 2px solid var(--line); background: var(--panel); border-radius: 16px; padding: 14px 6px; text-align: center; cursor: pointer; box-shadow: var(--shadow); transition: transform .1s; }
+  .mode-btn:active { transform: scale(0.96); }
+  .mode-btn .big { font-size: 19px; font-weight: 800; }
+  .mode-btn .small { font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; color: var(--ink-soft); }
   .mode-btn.active-in { border-color: var(--in-color); background: #EAF4EC; }
   .mode-btn.active-in .big { color: var(--in-color); }
   .mode-btn.active-out { border-color: var(--out-color); background: #FBEEE6; }
@@ -53,30 +68,51 @@
   .mode-btn.active-check { border-color: var(--check-color); background: #E9EEF2; }
   .mode-btn.active-check .big { color: var(--check-color); }
 
-  .scan-btn { width: 100%; padding: 18px; border-radius: 16px; border: none; color: white; font-size: 16px; font-weight: 700; letter-spacing: 0.02em; cursor: pointer; margin-bottom: 14px; }
-  .newprod-btn { width:100%; padding: 12px; border-radius: 12px; border: 1px dashed var(--forest); background: transparent; color: var(--forest-deep); font-size:13px; font-weight:600; margin-bottom:14px; cursor:pointer; }
+  .scan-btn { width: 100%; padding: 18px; border-radius: 18px; border: none; color: white; font-size: 16px; font-weight: 800; letter-spacing: 0.02em; cursor: pointer; margin-bottom: 12px; box-shadow: var(--shadow); }
+  .newprod-btn { width:100%; padding: 12px; border-radius: 14px; border: 1.5px dashed var(--forest); background: transparent; color: var(--forest-deep); font-size:13px; font-weight:700; margin-bottom:14px; cursor:pointer; }
 
-  #reader { width: 100%; border-radius: 14px; overflow: hidden; margin-bottom: 14px; }
+  #reader { width: 100%; border-radius: 16px; overflow: hidden; margin-bottom: 14px; }
 
-  .card-title { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
-  .card-sub { font-size: 12px; color: var(--ink-soft); margin-bottom: 12px; }
+  .card-title { font-size: 16px; font-weight: 800; margin-bottom: 2px; }
+  .card-sub { font-size: 12px; color: var(--ink-soft); margin-bottom: 14px; }
   .price-line { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
   .price-line span.currency { font-family: var(--mono); font-weight:700; }
 
   .feed-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
   .feed-item:last-child { border-bottom: none; }
-  .feed-item .fi-code { font-family: var(--mono); font-weight: 600; }
+  .feed-item .fi-code { font-family: var(--mono); font-weight: 700; }
   .feed-item .fi-loc { color: var(--ink-soft); font-size: 11px; }
-  .feed-tag { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 20px; color: white; }
+  .feed-tag { font-size: 9.5px; font-weight: 800; padding: 3px 9px; border-radius: 20px; color: white; }
 
-  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--forest-deep); color: white; padding: 10px 18px; border-radius: 20px; font-size: 13px; font-weight: 600; box-shadow: 0 4px 16px rgba(0,0,0,0.2); z-index: 50; max-width: 90%; text-align: center; }
-  .empty-note { font-size: 12px; color: var(--ink-soft); text-align: center; padding: 10px 0; }
-  .lookup-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
-  .lookup-row .qty { font-weight: 700; color: var(--check-color); }
+  .toast { position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%); background: var(--forest-deep); color: white; padding: 11px 20px; border-radius: 24px; font-size: 13px; font-weight: 600; box-shadow: 0 6px 20px rgba(0,0,0,0.25); z-index: 50; max-width: 90%; text-align: center; }
+  .empty-note { font-size: 12px; color: var(--ink-soft); text-align: center; padding: 12px 0; }
+  .lookup-row { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .lookup-row .qty { font-weight: 800; color: var(--check-color); }
 
-  #barcodePreview { text-align:center; background:white; border-radius: 10px; padding: 10px; margin-bottom: 12px; }
-  .overlay-backdrop { position: fixed; inset:0; background: rgba(20,20,15,0.45); z-index: 40; display:flex; align-items:flex-end; }
-  .overlay-card { background: var(--panel); width:100%; border-radius: 20px 20px 0 0; padding: 20px 16px 24px; max-height: 85vh; overflow-y:auto; }
+  #barcodePreview { text-align:center; background:white; border-radius: 12px; padding: 12px; margin-bottom: 12px; border: 1px solid var(--line); }
+  .overlay-backdrop { position: fixed; inset:0; background: rgba(18,25,20,0.5); z-index: 40; display:flex; align-items:flex-end; }
+  .overlay-card { background: var(--panel); width:100%; border-radius: 24px 24px 0 0; padding: 22px 18px 26px; max-height: 85vh; overflow-y:auto; }
+
+  /* Bottom tab bar */
+  .tab-bar {
+    position: fixed; bottom: 0; left: 0; right: 0; background: var(--panel);
+    border-top: 1px solid var(--line); display: flex; max-width: 480px; margin: 0 auto;
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.05); z-index: 30;
+  }
+  .tab-item { flex: 1; text-align: center; padding: 12px 0 10px; cursor: pointer; color: var(--ink-soft); }
+  .tab-item.active { color: var(--forest); }
+  .tab-item .ticon { font-size: 19px; }
+  .tab-item .tlabel { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2px; }
+
+  /* Dashboard */
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .stat-card { background: var(--panel); border-radius: 16px; padding: 14px; box-shadow: var(--shadow); border: 1px solid var(--line); }
+  .stat-card .stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); font-weight: 700; }
+  .stat-card .stat-value { font-size: 22px; font-weight: 800; color: var(--forest-deep); margin-top: 4px; font-family: var(--mono); }
+  .bar-row { margin-bottom: 12px; }
+  .bar-label-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; font-weight: 600; }
+  .bar-track { height: 10px; background: var(--forest-light); border-radius: 6px; overflow: hidden; }
+  .bar-fill { height: 100%; background: linear-gradient(90deg, var(--forest), var(--gold)); border-radius: 6px; }
 </style>
 
 <div class="qr4-root">
@@ -97,39 +133,84 @@
     </div>
   </div>
 
-  <div class="location-bar">
-    <div>
-      <div class="label">Current Rack Location</div>
-      <div class="code" id="currentLocation">Not set</div>
+  <!-- SCAN VIEW -->
+  <div id="scanView">
+    <div class="store-tabs">
+      <div class="store-tab" id="storeBLR" onclick="setStore('BLR')">Bangalore</div>
+      <div class="store-tab" id="storeHYD" onclick="setStore('HYD')">Hyderabad</div>
+      <div class="store-tab" id="storePUN" onclick="setStore('PUN')">Pune</div>
     </div>
-    <button class="btn btn-ghost" onclick="startLocationScan()">Set / Change</button>
+
+    <div class="location-bar">
+      <div>
+        <div class="label">Current Rack Location</div>
+        <div class="code" id="currentLocation">Not set</div>
+      </div>
+      <button class="btn btn-ghost" onclick="startLocationScan()">Set / Change</button>
+    </div>
+
+    <div class="mode-grid">
+      <div class="mode-btn" id="modeInBtn" onclick="setMode('IN')">
+        <div class="big">IN</div><div class="small">Receiving</div>
+      </div>
+      <div class="mode-btn" id="modeOutBtn" onclick="setMode('OUT')">
+        <div class="big">OUT</div><div class="small">Sale / Move</div>
+      </div>
+      <div class="mode-btn" id="modeCheckBtn" onclick="setMode('CHECK')">
+        <div class="big">CHK</div><div class="small">Look up rack</div>
+      </div>
+    </div>
+
+    <button class="scan-btn" id="scanBtn" onclick="startProductScan()">📷 SCAN PRODUCT BARCODE</button>
+    <button class="newprod-btn" onclick="openNewProductForm(null)">+ New Product (generate barcode, no scan)</button>
+
+    <div id="reader" style="display:none;"></div>
+
+    <div class="panel" id="lookupPanel" style="display:none;">
+      <span class="field-label">Items at this location</span>
+      <div id="lookupResults"></div>
+    </div>
+
+    <div class="panel">
+      <span class="field-label">Recent Activity</span>
+      <div id="feed"><div class="empty-note">No scans yet</div></div>
+    </div>
   </div>
 
-  <div class="mode-grid">
-    <div class="mode-btn" id="modeInBtn" onclick="setMode('IN')">
-      <div class="big">IN</div><div class="small">Receiving</div>
+  <!-- DASHBOARD VIEW -->
+  <div id="dashboardView" style="display:none;">
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total SKUs</div>
+        <div class="stat-value" id="dashSKUs">–</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Units</div>
+        <div class="stat-value" id="dashUnits">–</div>
+      </div>
     </div>
-    <div class="mode-btn" id="modeOutBtn" onclick="setMode('OUT')">
-      <div class="big">OUT</div><div class="small">Sale / Move</div>
+    <div class="panel">
+      <div class="stat-label">Total Stock Value</div>
+      <div class="stat-value" id="dashValue" style="font-size:26px;">–</div>
     </div>
-    <div class="mode-btn" id="modeCheckBtn" onclick="setMode('CHECK')">
-      <div class="big">CHK</div><div class="small">Look up rack</div>
+    <div class="panel">
+      <span class="field-label">By Store</span>
+      <div id="dashByStore"><div class="empty-note">Loading...</div></div>
     </div>
+    <div class="panel">
+      <span class="field-label">By Zone</span>
+      <div id="dashByZone"><div class="empty-note">Loading...</div></div>
+    </div>
+    <button class="btn btn-ghost" style="width:100%;" onclick="loadDashboard()">Refresh</button>
   </div>
+</div>
 
-  <button class="scan-btn" id="scanBtn" onclick="startProductScan()">📷 SCAN PRODUCT BARCODE</button>
-  <button class="newprod-btn" onclick="openNewProductForm(null)">+ New Product (generate barcode, no scan)</button>
-
-  <div id="reader" style="display:none;"></div>
-
-  <div class="panel" id="lookupPanel" style="display:none;">
-    <span class="field-label">Items at this location</span>
-    <div id="lookupResults"></div>
+<div class="tab-bar">
+  <div class="tab-item active" id="tabScan" onclick="switchTab('scan')">
+    <div class="ticon">📷</div><div class="tlabel">Scan</div>
   </div>
-
-  <div class="panel">
-    <span class="field-label">Recent Activity</span>
-    <div id="feed"><div class="empty-note">No scans yet</div></div>
+  <div class="tab-item" id="tabDashboard" onclick="switchTab('dashboard')">
+    <div class="ticon">📊</div><div class="tlabel">Dashboard</div>
   </div>
 </div>
 
@@ -137,12 +218,16 @@
 
 <script>
   let scriptUrl = '';
-  let currentLocation = '';
+  let currentStore = 'BLR';
+  let currentRack = '';
   let currentMode = 'IN';
   let html5Qrcode = null;
   let scanningFor = null;
   let lastScan = { code: '', time: 0 };
   const feedData = [];
+  const STORE_NAMES = { BLR: 'Bangalore', HYD: 'Hyderabad', PUN: 'Pune' };
+
+  function fullLocation() { return currentRack ? (currentStore + '-' + currentRack) : ''; }
 
   async function loadConfig() {
     try {
@@ -150,11 +235,13 @@
       if (result && result.value) {
         const cfg = JSON.parse(result.value);
         scriptUrl = cfg.scriptUrl || '';
-        currentLocation = cfg.lastLocation || '';
+        currentStore = cfg.store || 'BLR';
+        currentRack = cfg.rack || '';
       }
     } catch (e) {}
     document.getElementById('scriptUrlInput').value = scriptUrl;
     updateStatusLine();
+    setStore(currentStore);
     updateLocationDisplay();
     setMode('IN');
   }
@@ -169,19 +256,36 @@
 
   async function persistConfig() {
     try {
-      await window.storage.set('qr4life-config', JSON.stringify({ scriptUrl, lastLocation: currentLocation }), false);
+      await window.storage.set('qr4life-config', JSON.stringify({ scriptUrl, store: currentStore, rack: currentRack }), false);
     } catch (e) { console.error('Storage error', e); }
   }
 
   function updateStatusLine() {
-    document.getElementById('statusLine').textContent = scriptUrl ? 'Connected to Sheet' : 'Not connected — tap ⚙ to add Script URL';
+    document.getElementById('statusLine').textContent = scriptUrl ? 'Connected to Sheet' : 'Not connected — tap ⚙';
   }
   function updateLocationDisplay() {
-    document.getElementById('currentLocation').textContent = currentLocation || 'Not set';
+    document.getElementById('currentLocation').textContent = currentRack ? fullLocation() : 'Not set';
   }
   function toggleSettings() {
     const panel = document.getElementById('settingsPanel');
     panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  }
+
+  function setStore(store) {
+    currentStore = store;
+    ['BLR','HYD','PUN'].forEach(s => {
+      document.getElementById('store' + s).className = 'store-tab' + (s === store ? ' active' : '');
+    });
+    updateLocationDisplay();
+    persistConfig();
+  }
+
+  function switchTab(tab) {
+    document.getElementById('scanView').style.display = tab === 'scan' ? 'block' : 'none';
+    document.getElementById('dashboardView').style.display = tab === 'dashboard' ? 'block' : 'none';
+    document.getElementById('tabScan').className = 'tab-item' + (tab === 'scan' ? ' active' : '');
+    document.getElementById('tabDashboard').className = 'tab-item' + (tab === 'dashboard' ? ' active' : '');
+    if (tab === 'dashboard') loadDashboard();
   }
 
   function setMode(mode) {
@@ -203,14 +307,14 @@
       scanBtn.style.background = 'var(--check-color)';
       scanBtn.textContent = '📷 SCAN RACK TO VIEW CONTENTS';
       lookupPanel.style.display = 'block';
-      if (currentLocation) runLookup(currentLocation);
+      if (currentRack) runLookup(fullLocation());
     }
   }
 
   function startLocationScan() { scanningFor = 'location'; openScanner(); }
   function startProductScan() {
     if (!scriptUrl) { showToast('Add your Script URL first (tap ⚙)'); return; }
-    if (currentMode !== 'CHECK' && !currentLocation) { showToast('Set a rack location first'); return; }
+    if (currentMode !== 'CHECK' && !currentRack) { showToast('Set a rack location first'); return; }
     scanningFor = currentMode === 'CHECK' ? 'location' : 'product';
     openScanner();
   }
@@ -250,23 +354,22 @@
     lastScan = { code: decodedText, time: now };
 
     if (scanningFor === 'location' && currentMode !== 'CHECK') {
-      currentLocation = decodedText.toUpperCase();
+      currentRack = decodedText.toUpperCase();
       updateLocationDisplay();
       await persistConfig();
       closeScanner();
-      showToast('Location set: ' + currentLocation);
+      showToast('Rack set: ' + fullLocation());
       return;
     }
     if (currentMode === 'CHECK') {
-      currentLocation = decodedText.toUpperCase();
+      currentRack = decodedText.toUpperCase();
       updateLocationDisplay();
       await persistConfig();
       closeScanner();
-      runLookup(currentLocation);
+      runLookup(fullLocation());
       return;
     }
 
-    // Product scan: identify first, then show confirm card or new-product form
     pauseScanner();
     const code = decodedText;
     try {
@@ -275,15 +378,10 @@
         body: JSON.stringify({ action: 'identify', code })
       });
       const data = await res.json();
-      if (data.exists) {
-        showConfirmCard(data);
-      } else {
-        openNewProductForm(code);
-      }
+      if (data.exists) { showConfirmCard(data); } else { openNewProductForm(code); }
     } catch (e) { showToast('Network error'); resumeScanner(); }
   }
 
-  // ---------- Confirm card (existing product) ----------
   function showConfirmCard(product) {
     const isIn = currentMode === 'IN';
     const overlay = document.getElementById('overlayRoot');
@@ -291,7 +389,7 @@
       <div class="overlay-backdrop">
         <div class="overlay-card">
           <div class="card-title">${escapeHtml(product.name)}</div>
-          <div class="card-sub">${escapeHtml(product.brand || '')} · Current stock: ${product.quantity} · At ${escapeHtml(currentLocation)}</div>
+          <div class="card-sub">${escapeHtml(product.brand || '')} · Current stock: ${product.quantity} · At ${escapeHtml(fullLocation())}</div>
           ${isIn ? `
             <span class="field-label">Price per unit (edit if changed)</span>
             <div class="price-line">
@@ -321,20 +419,17 @@
     try {
       const res = await fetch(scriptUrl, {
         method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'scan', code, location: currentLocation, type: currentMode, price })
+        body: JSON.stringify({ action: 'scan', code, location: fullLocation(), type: currentMode, price })
       });
       const data = await res.json();
       if (data.success) {
-        addFeedItem(code, currentLocation, currentMode, data.qtyAtLocation, data.name, data.price);
+        addFeedItem(code, fullLocation(), currentMode, data.qtyAtLocation, data.name, data.price);
         showToast((isIn ? '+1 → ' : '-1 → ') + data.name + ' · Total qty: ' + data.totalQty + ' · ₹' + data.price);
-      } else {
-        showToast('Error: ' + (data.error || 'unknown'));
-      }
+      } else { showToast('Error: ' + (data.error || 'unknown')); }
     } catch (e) { showToast('Network error'); }
     resumeScanner();
   }
 
-  // ---------- New product form ----------
   function openNewProductForm(prefillCode) {
     pauseScanner();
     const overlay = document.getElementById('overlayRoot');
@@ -368,25 +463,19 @@
     const price = document.getElementById('npPrice').value;
     const isDisplay = document.getElementById('npDisplay').checked;
     if (!name) { showToast('Product name is required'); return; }
-
     closeOverlay();
     showToast('Saving new product...');
     try {
       const res = await fetch(scriptUrl, {
         method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({
-          action: 'createProduct', code: prefillCode || '', brand, productCode, name, price,
-          isDisplay, location: currentLocation || ''
-        })
+        body: JSON.stringify({ action: 'createProduct', code: prefillCode || '', brand, productCode, name, price, isDisplay, location: fullLocation() || '' })
       });
       const data = await res.json();
       if (data.success) {
         showToast('Saved: ' + data.name + ' (' + data.code + ')');
-        if (data.qtyAtLocation) addFeedItem(data.code, currentLocation, 'IN', data.qtyAtLocation, data.name, data.price);
+        if (data.qtyAtLocation) addFeedItem(data.code, fullLocation(), 'IN', data.qtyAtLocation, data.name, data.price);
         showBarcodeResult(data.code, data.name, data.price);
-      } else {
-        showToast('Error: ' + data.error);
-      }
+      } else { showToast('Error: ' + data.error); }
     } catch (e) { showToast('Network error'); }
     resumeScanner();
   }
@@ -411,11 +500,7 @@
   function printBarcode(code, name, price) {
     const w = window.open('', '_blank', 'width=420,height=320');
     w.document.write(`<html><head><title>Label</title>
-      <style>
-        body { font-family: sans-serif; text-align:center; padding: 10px; }
-        .pname { font-size: 13px; font-weight:600; margin-top:6px; }
-        .pprice { font-size: 13px; margin-top:2px; }
-      </style>
+      <style>body{font-family:sans-serif;text-align:center;padding:10px;}.pname{font-size:13px;font-weight:600;margin-top:6px;}.pprice{font-size:13px;margin-top:2px;}</style>
       </head><body>
         <svg id="pbarcode"></svg>
         <div class="pname">${escapeHtml(name)}</div>
@@ -431,7 +516,6 @@
 
   function closeOverlay() { document.getElementById('overlayRoot').innerHTML = ''; }
 
-  // ---------- Lookup (CHECK mode) ----------
   async function runLookup(location) {
     if (!scriptUrl) { showToast('Add your Script URL first'); return; }
     const container = document.getElementById('lookupResults');
@@ -446,13 +530,46 @@
         container.innerHTML = data.items.length === 0
           ? '<div class="empty-note">No stock recorded at this location</div>'
           : data.items.map(it => `<div class="lookup-row"><span>${escapeHtml(it.name)}</span><span class="qty">${it.qty}</span></div>`).join('');
-      } else {
-        container.innerHTML = '<div class="empty-note">Error: ' + data.error + '</div>';
-      }
+      } else { container.innerHTML = '<div class="empty-note">Error: ' + data.error + '</div>'; }
     } catch (e) { container.innerHTML = '<div class="empty-note">Network error</div>'; }
   }
 
-  // ---------- Feed ----------
+  async function loadDashboard() {
+    if (!scriptUrl) { showToast('Add your Script URL first'); return; }
+    document.getElementById('dashSKUs').textContent = '…';
+    document.getElementById('dashUnits').textContent = '…';
+    document.getElementById('dashValue').textContent = '…';
+    try {
+      const res = await fetch(scriptUrl, {
+        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'dashboard' })
+      });
+      const data = await res.json();
+      if (!data.success) { showToast('Dashboard error: ' + data.error); return; }
+      document.getElementById('dashSKUs').textContent = data.totalSKUs;
+      document.getElementById('dashUnits').textContent = data.totalUnits;
+      document.getElementById('dashValue').textContent = '₹' + Number(data.totalValue).toLocaleString('en-IN');
+
+      const maxStoreUnits = Math.max(1, ...data.byStore.map(s => s.units));
+      document.getElementById('dashByStore').innerHTML = data.byStore.length === 0
+        ? '<div class="empty-note">No stock yet</div>'
+        : data.byStore.map(s => `
+          <div class="bar-row">
+            <div class="bar-label-row"><span>${STORE_NAMES[s.store] || s.store}</span><span>${s.units} units · ₹${Number(s.value).toLocaleString('en-IN')}</span></div>
+            <div class="bar-track"><div class="bar-fill" style="width:${(s.units / maxStoreUnits) * 100}%"></div></div>
+          </div>`).join('');
+
+      const maxZoneUnits = Math.max(1, ...data.byZone.map(z => z.units));
+      document.getElementById('dashByZone').innerHTML = data.byZone.length === 0
+        ? '<div class="empty-note">No stock yet</div>'
+        : data.byZone.map(z => `
+          <div class="bar-row">
+            <div class="bar-label-row"><span>${escapeHtml(z.zone)}</span><span>${z.units} units · ₹${Number(z.value).toLocaleString('en-IN')}</span></div>
+            <div class="bar-track"><div class="bar-fill" style="width:${(z.units / maxZoneUnits) * 100}%"></div></div>
+          </div>`).join('');
+    } catch (e) { showToast('Network error loading dashboard'); }
+  }
+
   function addFeedItem(code, location, type, qty, name, price) {
     feedData.unshift({ code, location, type, qty, name, price });
     if (feedData.length > 15) feedData.pop();
@@ -475,7 +592,6 @@
       </div>`).join('');
   }
 
-  // ---------- Utilities ----------
   function escapeHtml(str) {
     return String(str || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   }
