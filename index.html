@@ -444,8 +444,16 @@
   function pauseScanner() { if (html5Qrcode) { try { html5Qrcode.pause(true); } catch(e){} } }
   function resumeScanner() { if (html5Qrcode) { try { html5Qrcode.resume(); } catch(e){} } }
   function closeScanner() {
-    if (html5Qrcode) {
-      html5Qrcode.stop().then(() => { document.getElementById('reader').style.display = 'none'; }).catch(() => { document.getElementById('reader').style.display = 'none'; });
+    try {
+      if (html5Qrcode) {
+        html5Qrcode.stop()
+          .then(() => { document.getElementById('reader').style.display = 'none'; })
+          .catch(() => { document.getElementById('reader').style.display = 'none'; });
+      } else {
+        document.getElementById('reader').style.display = 'none';
+      }
+    } catch (e) {
+      document.getElementById('reader').style.display = 'none';
     }
   }
 
@@ -513,7 +521,6 @@
   }
 
   function openNewProductForm(prefillCode) {
-    closeScanner();
     const overlay = document.getElementById('overlayRoot');
     const isFromScan = !!prefillCode;
     overlay.innerHTML = `
