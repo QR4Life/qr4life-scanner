@@ -532,7 +532,14 @@
       <div class="overlay-backdrop">
         <div class="overlay-card">
           <div class="card-title">New Product</div>
-          <div class="card-sub">${isFromScan ? 'Barcode scanned: ' + escapeHtml(prefillCode) + ' — not in your catalog yet' : 'No barcode yet — one will be generated for you to print'}</div>
+          <div class="card-sub">${isFromScan ? 'Barcode scanned: ' + escapeHtml(prefillCode) + ' — not in your catalog yet' : 'No barcode yet? Leave the field below blank and one will be generated for you to print.'}</div>
+          ${isFromScan ? `
+            <span class="field-label">Barcode (scanned)</span>
+            <input type="text" id="npBarcode" value="${escapeHtml(prefillCode)}" readonly style="background:#EFEBDF; color:var(--ink-soft);" />
+          ` : `
+            <span class="field-label">Barcode (type it in if this item HAS one on the box - otherwise leave blank)</span>
+            <input type="text" id="npBarcode" placeholder="e.g. 8901030875421 - or leave blank" />
+          `}
           <span class="field-label">Brand</span>
           <input type="text" id="npBrand" placeholder="e.g. KitchenAid" />
           <span class="field-label">Product Code (vendor/model code, optional)</span>
@@ -543,14 +550,15 @@
           <input type="number" id="npPrice" placeholder="e.g. 42999" />
           <label class="checkline"><input type="checkbox" id="npDisplay" /> This is a display item (skip rack map)</label>
           <div class="row">
-            <button class="btn btn-primary" onclick="submitNewProduct('${isFromScan ? prefillCode : ''}')">Save Product</button>
+            <button class="btn btn-primary" onclick="submitNewProduct()">Save Product</button>
             <button class="btn btn-ghost" onclick="cancelOverlay()">Cancel</button>
           </div>
         </div>
       </div>`;
   }
 
-  async function submitNewProduct(prefillCode) {
+  async function submitNewProduct() {
+    const prefillCode = document.getElementById('npBarcode').value.trim();
     const brand = document.getElementById('npBrand').value.trim();
     const productCode = document.getElementById('npProductCode').value.trim();
     const name = document.getElementById('npName').value.trim();
