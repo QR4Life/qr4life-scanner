@@ -288,13 +288,46 @@
 
   function fullLocation() { return currentRack ? (currentStore + '-' + currentRack) : ''; }
 
-  // All backend calls go through GET with query params - far more reliable
-  // cross-origin with Google Apps Script's redirect than POST with a JSON body.
-  async function callBackend(params) {
-    const qs = new URLSearchParams(params).toString();
-    const res = await fetch(scriptUrl + (scriptUrl.indexOf('?') === -1 ? '?' : '&') + qs, { method: 'GET' });
-    const rawText = await res.text();
-    return JSON.parse(rawText);
+  // JSONP - loads the response as a <script> tag instead of a network fetch.
+  // Script tags are never subject to CORS, so this works reliably across
+  // every browser/network, unlike fetch() to a cross-origin Apps Script URL.
+  function callBackend(params) {
+    return new Promise((resolve, reject) => {
+      const callbackName = 'qr4cb_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+      const qs = new URLSearchParams(Object.assign({}, params, { callback: callbackName })).toString();
+      const script = document.createElement('script');
+      let settled = false;
+
+      const timeout = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        reject(new Error('Request timed out - check your internet connection'));
+      }, 15000);
+
+      function cleanup() {
+        clearTimeout(timeout);
+        delete window[callbackName];
+        if (script.parentNode) script.parentNode.removeChild(script);
+      }
+
+      window[callbackName] = function(data) {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        resolve(data);
+      };
+
+      script.onerror = function() {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        reject(new Error('Could not reach the Script URL - check it is correct and deployed'));
+      };
+
+      script.src = scriptUrl + (scriptUrl.indexOf('?') === -1 ? '?' : '&') + qs;
+      document.body.appendChild(script);
+    });
   }
 
   async function loadConfig() {
