@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR4Life Connection Test</title>
+<style>
+  body { font-family: -apple-system, sans-serif; padding: 16px; background: #f5f5f0; margin:0; }
+  h1 { font-size: 18px; }
+  button { display:block; width:100%; padding:16px; margin:10px 0; font-size:15px; font-weight:bold; border:none; border-radius:10px; background:#1F4B38; color:white; }
+  .result { background:white; border:1px solid #ccc; border-radius:10px; padding:12px; margin:10px 0; font-family:monospace; font-size:12px; white-space:pre-wrap; word-break:break-all; min-height:20px; }
+  .ok { border-color:#2F7A54; background:#EAF4EC; }
+  .fail { border-color:#B8562E; background:#FBEEE6; }
+</style>
+</head>
+<body>
+<h1>QR4Life Connection Test</h1>
+<p>URL being tested:<br><span style="font-size:11px; word-break:break-all;" id="urlDisplay"></span></p>
+
+<button onclick="testDirectLink()">TEST 1: Open link directly (new tab)</button>
+<div class="result" id="result1">Not tested yet</div>
+
+<button onclick="testFetch()">TEST 2: fetch() GET request</button>
+<div class="result" id="result2">Not tested yet</div>
+
+<button onclick="testJsonp()">TEST 3: JSONP script tag</button>
+<div class="result" id="result3">Not tested yet</div>
+
+<script>
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx8WSfmvX3J0LikgCuANg7QTGAKIVrEa-4fNq6QhCVx1_kvOtWNoR_k6YbCnDHarj4Ngg/exec';
+  document.getElementById('urlDisplay').textContent = SCRIPT_URL;
+
+  function testDirectLink() {
+    window.open(SCRIPT_URL + '?action=dashboard', '_blank');
+    document.getElementById('result1').textContent = 'Opened in new tab - check that tab for plain JSON text';
+    document.getElementById('result1').className = 'result';
+  }
+
+  async function testFetch() {
+    const div = document.getElementById('result2');
+    div.textContent = 'Testing...';
+    div.className = 'result';
+    try {
+      const res = await fetch(SCRIPT_URL + '?action=dashboard');
+      const text = await res.text();
+      div.textContent = 'HTTP status: ' + res.status + '\n\nResponse (first 300 chars):\n' + text.substring(0, 300);
+      div.className = res.ok ? 'result ok' : 'result fail';
+    } catch (e) {
+      div.textContent = 'THREW EXCEPTION:\nName: ' + e.name + '\nMessage: ' + e.message + '\nFull: ' + e.toString();
+      div.className = 'result fail';
+    }
+  }
+
+  function testJsonp() {
+    const div = document.getElementById('result3');
+    div.textContent = 'Testing...';
+    div.className = 'result';
+    const cbName = 'diagTest_' + Date.now();
+    const script = document.createElement('script');
+    let done = false;
+
+    const timeout = setTimeout(() => {
+      if (done) return;
+      done = true;
+      div.textContent = 'TIMED OUT after 10 seconds - script never called back, and no onerror fired either';
+      div.className = 'result fail';
+      cleanup();
+    }, 10000);
+
+    function cleanup() {
+      clearTimeout(timeout);
+      delete window[cbName];
+      if (script.parentNode) script.parentNode.removeChild(script);
+    }
+
+    window[cbName] = function(data) {
+      if (done) return;
+      done = true;
+      div.textContent = 'SUCCESS - received data:\n' + JSON.stringify(data, null, 2).substring(0, 400);
+      div.className = 'result ok';
+      cleanup();
+    };
+
+    script.onerror = function(errEvent) {
+      if (done) return;
+      done = true;
+      div.textContent = 'SCRIPT FAILED TO LOAD (onerror fired)\nThis usually means: network blocked it, wrong URL, or content blocked by browser/carrier.';
+      div.className = 'result fail';
+      cleanup();
+    };
+
+    script.src = SCRIPT_URL + '?action=dashboard&callback=' + cbName;
+    document.body.appendChild(script);
+  }
+</script>
+</body>
+</html>
