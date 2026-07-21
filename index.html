@@ -288,6 +288,15 @@
 
   function fullLocation() { return currentRack ? (currentStore + '-' + currentRack) : ''; }
 
+  // All backend calls go through GET with query params - far more reliable
+  // cross-origin with Google Apps Script's redirect than POST with a JSON body.
+  async function callBackend(params) {
+    const qs = new URLSearchParams(params).toString();
+    const res = await fetch(scriptUrl + (scriptUrl.indexOf('?') === -1 ? '?' : '&') + qs, { method: 'GET' });
+    const rawText = await res.text();
+    return JSON.parse(rawText);
+  }
+
   async function loadConfig() {
     try {
       const raw = localStorage.getItem('qr4life-config');
@@ -416,19 +425,7 @@
     const code = decodedText;
     showToast('Detected: ' + code);
     try {
-      const res = await fetch(scriptUrl, {
-        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'identify', code })
-      });
-      const rawText = await res.text();
-      let data;
-      try { data = JSON.parse(rawText); }
-      catch (parseErr) {
-        showToast('Script did not return JSON - check deployment access is Anyone', true);
-        console.error('Raw response:', rawText);
-        resumeScanner();
-        return;
-      }
+      const data = await callBackend({ action: 'identify', code });
       if (data.exists) { showConfirmCard(data); } else { openNewProductForm(code); }
     } catch (e) { showToast('Network error: ' + e.message, true); resumeScanner(); }
   }
@@ -468,16 +465,12 @@
     closeOverlay();
     showToast('Saving...');
     try {
-      const res = await fetch(scriptUrl, {
-        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'scan', code, location: fullLocation(), type: currentMode, price })
-      });
-      const data = await res.json();
+      const data = await callBackend({ action: 'scan', code, location: fullLocation(), type: currentMode, price: price || '' });
       if (data.success) {
         addFeedItem(code, fullLocation(), currentMode, data.qtyAtLocation, data.name, data.price);
         showToast((isIn ? '+1 → ' : '-1 → ') + data.name + ' · Total qty: ' + data.totalQty + ' · ₹' + data.price);
-      } else { showToast('Error: ' + (data.error || 'unknown')); }
-    } catch (e) { showToast('Network error'); }
+      } else { showToast('Error: ' + (data.error || 'unknown'), true); }
+    } catch (e) { showToast('Network error: ' + e.message, true); }
     openScanner();
   }
 
@@ -517,25 +510,16 @@
     closeOverlay();
     showToast('Saving new product...');
     try {
-      const res = await fetch(scriptUrl, {
-        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'createProduct', code: prefillCode || '', brand, productCode, name, price, isDisplay, location: fullLocation() || '' })
+      const data = await callBackend({
+        action: 'createProduct', code: prefillCode || '', brand, productCode, name, price,
+        isDisplay: isDisplay ? 'true' : 'false', location: fullLocation() || ''
       });
-      const rawText = await res.text();
-      let data;
-      try { data = JSON.parse(rawText); }
-      catch (parseErr) {
-        showToast('Script did not return JSON - check deployment access is set to Anyone');
-        console.error('Raw response:', rawText);
-        resumeScanner();
-        return;
-      }
       if (data.success) {
         showToast('Saved: ' + data.name + ' (' + data.code + ')');
         if (data.qtyAtLocation) addFeedItem(data.code, fullLocation(), 'IN', data.qtyAtLocation, data.name, data.price);
         showBarcodeResult(data.code, data.name, data.price);
-      } else { showToast('Error: ' + data.error); }
-    } catch (e) { showToast('Network error'); }
+      } else { showToast('Error: ' + data.error, true); }
+    } catch (e) { showToast('Network error: ' + e.message, true); }
     openScanner();
   }
 
@@ -589,17 +573,13 @@
     const container = document.getElementById('lookupResults');
     container.innerHTML = '<div class="empty-note">Loading...</div>';
     try {
-      const res = await fetch(scriptUrl, {
-        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'lookup', location })
-      });
-      const data = await res.json();
+      const data = await callBackend({ action: 'lookup', location });
       if (data.success) {
         container.innerHTML = data.items.length === 0
           ? '<div class="empty-note">No stock recorded at this location</div>'
           : data.items.map(it => `<div class="lookup-row"><span>${escapeHtml(it.name)}</span><span class="qty">${it.qty}</span></div>`).join('');
-      } else { container.innerHTML = '<div class="empty-note">Error: ' + data.error + '</div>'; }
-    } catch (e) { container.innerHTML = '<div class="empty-note">Network error</div>'; }
+      } else { container.innerHTML = '<div class="empty-note">Error: ' + escapeHtml(data.error) + '</div>'; }
+    } catch (e) { container.innerHTML = '<div class="empty-note">Network error: ' + escapeHtml(e.message) + '</div>'; }
   }
 
   async function loadDashboard() {
@@ -608,12 +588,8 @@
     document.getElementById('dashUnits').textContent = '…';
     document.getElementById('dashValue').textContent = '…';
     try {
-      const res = await fetch(scriptUrl, {
-        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'dashboard' })
-      });
-      const data = await res.json();
-      if (!data.success) { showToast('Dashboard error: ' + data.error); return; }
+      const data = await callBackend({ action: 'dashboard' });
+      if (!data.success) { showToast('Dashboard error: ' + data.error, true); return; }
       document.getElementById('dashSKUs').textContent = data.totalSKUs;
       document.getElementById('dashUnits').textContent = data.totalUnits;
       document.getElementById('dashValue').textContent = '₹' + Number(data.totalValue).toLocaleString('en-IN');
@@ -644,7 +620,7 @@
             <div class="bar-label-row"><span>${escapeHtml(z.zone)}</span><span>${z.units} units · ₹${Number(z.value).toLocaleString('en-IN')}</span></div>
             <div class="bar-track"><div class="bar-fill" style="width:${(z.units / maxZoneUnits) * 100}%"></div></div>
           </div>`).join('');
-    } catch (e) { showToast('Network error loading dashboard'); }
+    } catch (e) { showToast('Network error loading dashboard: ' + e.message, true); }
   }
 
   async function runFindStock() {
@@ -654,11 +630,7 @@
     if (!scriptUrl) { showToast('Add your Script URL first'); return; }
     resultsDiv.innerHTML = '<div class="panel"><div class="empty-note">Searching...</div></div>';
     try {
-      const res = await fetch(scriptUrl, {
-        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'findStock', query })
-      });
-      const data = await res.json();
+      const data = await callBackend({ action: 'findStock', query });
       if (!data.success) { resultsDiv.innerHTML = '<div class="panel"><div class="empty-note">Error: ' + escapeHtml(data.error) + '</div></div>'; return; }
       if (data.matches.length === 0) {
         resultsDiv.innerHTML = '<div class="panel"><div class="empty-note">No products match "' + escapeHtml(query) + '"</div></div>';
