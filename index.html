@@ -460,7 +460,12 @@
     try {
       const data = await callBackend({ action: 'identify', code });
       if (data.exists) { showConfirmCard(data); } else { openNewProductForm(code); }
-    } catch (e) { showToast('Network error: ' + e.message, true); resumeScanner(); }
+    } catch (e) {
+      const debugMsg = 'Error: ' + (e && e.name ? e.name : typeof e) + ' | ' + (e && e.message ? e.message : JSON.stringify(e));
+      showToast(debugMsg, true);
+      console.error('Full error object:', e);
+      resumeScanner();
+    }
   }
 
   function showConfirmCard(product) {
@@ -715,7 +720,7 @@
     toast.style.background = isError ? 'var(--out-color)' : 'var(--forest-deep)';
     toast.style.display = 'block';
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { toast.style.display = 'none'; }, isError ? 6000 : 2600);
+    toastTimer = setTimeout(() => { toast.style.display = 'none'; }, isError ? 10000 : 2600);
   }
 
   loadConfig();
